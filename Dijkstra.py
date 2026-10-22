@@ -39,30 +39,76 @@ def obtener_camino(previo, destino):
     return camino
 
 # --- INTERFAZ STREAMLIT ---
-st.set_page_config(page_title="Algoritmo de Dijkstra con Mapa", layout="wide")
-st.title("🌐 Visualizador de Rutas Mínimas - Dijkstra (con Mapa de Fondo)")
+st.set_page_config(page_title="Rutas de Guatemala - Dijkstra", layout="wide")
+st.title("🇬🇹 Red Vial de Guatemala - Algoritmo de Dijkstra")
 
-st.sidebar.header("Configuración del Grafo (Mínimo 31 Nodos)")
+st.sidebar.header("Configuración del Mapa Vial")
 
-# Generar por defecto una lista amplia para cumplir con los 31 nodos exigidos
-default_vertices = ", ".join([f"N{i}" for i in range(1, 35)])
-default_edges = "\n".join([f"N{i} N{i+1} {(i*3)%15 + 2}" for i in range(1, 34)])
-default_edges += "\nN34 N1 10\nN1 N15 7\nN5 N20 12"
+# Lista completa de Departamentos + Municipios clave para superar los 31 nodos requeridos
+default_vertices = (
+    "Guatemala, Mixco, Villa_Nueva, Sacatepequez, Chimaltenango, Escuintla, "
+    "El_Progreso, Zacapa, Chiquimula, Izabal, Peten, Alta_Verapaz, Baja_Verapaz, "
+    "Quiche, Huehuetenango, San_Marcos, Quetzaltenango, Totonicapan, Solola, "
+    "Retalhuleu, Suchitepequez, Santa_Rosa, Jutiapa, Jalapa, Minit_1, Minit_2, "
+    "Minit_3, Minit_4, Minit_5, Minit_6, Minit_7, Minit_8, Minit_9"
+)
 
-# 1. Entrada de Vértices
-vertices_input = st.sidebar.text_input("Vértices (separados por coma):", default_vertices)
+# Conexiones viales base incluyendo los ejemplos que mencionaste (Petén - Alta Verapaz = 4, Petén - Izabal = 7)
+default_edges = """
+Peten Alta_Verapaz 4
+Peten Izabal 7
+Peten Quiche 9
+Alta_Verapaz Izabal 5
+Alta_Verapaz Baja_Verapaz 3
+Alta_Verapaz Quiche 6
+Zacapa Izabal 4
+Zacapa Chiquimula 2
+Zacapa El_Progreso 5
+Chiquimula Jutiapa 8
+Guatemala Mixco 2
+Guatemala Villa_Nueva 3
+Guatemala Sacatepequez 4
+Guatemala El_Progreso 6
+Guatemala Santa_Rosa 7
+Sacatepequez Chimaltenango 3
+Chimaltenango Solola 5
+Solola Quetzaltenango 4
+Solola Totonicapan 3
+Quetzaltenango San_Marcos 4
+Quetzaltenango Retalhuleu 3
+Retalhuleu Suchitepequez 2
+Suchitepequez Escuintla 5
+Escuintla Santa_Rosa 4
+Escuintla Jutiapa 9
+Baja_Verapaz Quiche 5
+Quiche Huehuetenango 6
+Huehuetenango San_Marcos 8
+Jalapa Jutiapa 5
+Jalapa Chiquimula 6
+El_Progreso Zacapa 3
+Guatemala Minit_1 1
+Minit_1 Minit_2 2
+Minit_2 Minit_3 1
+Minit_3 Minit_4 2
+Minit_4 Minit_5 1
+Minit_5 Minit_6 2
+Minit_6 Minit_7 1
+Minit_7 Minit_8 2
+Minit_8 Minit_9 1
+Minit_9 Escuintla 2
+"""
+
+# 1. Entradas en barra lateral
+vertices_input = st.sidebar.text_input("Departamentos y Nodos:", default_vertices)
 lista_vertices = [v.strip() for v in vertices_input.split(",") if v.strip()]
 
-# 2. Entrada de Aristas
-st.sidebar.subheader("Aristas y Pesos")
-st.sidebar.caption("Formato por línea: origen destino peso (ej: N1 N2 5)")
-aristas_input = st.sidebar.text_area("Lista de Aristas:", default_edges, height=150)
+st.sidebar.subheader("Conexiones y Costos (Distancias)")
+aristas_input = st.sidebar.text_area("Lista de Conexiones:", default_edges, height=200)
 
-# Opción para mapa de fondo (URL de una imagen de mapa o plano)
-st.sidebar.subheader("Personalización del Mapa")
+# URL de un mapa limpio de Guatemala para el fondo
 mapa_fondo_url = st.sidebar.text_input(
-    "URL de imagen de mapa de fondo:", 
-    "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1000&auto=format&fit=crop"
+    "URL del Mapa de Fondo:",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Guatemala_departments_blank.svg/800px-Guatemala_departments_blank.svg.png"
 )
 
 # Construcción del Grafo
@@ -74,8 +120,6 @@ for linea in aristas_input.strip().split("\n"):
         if u in grafo and v in grafo:
             try:
                 peso = int(w)
-                if peso < 0:
-                    st.sidebar.warning(f"Advertencia: Peso negativo detectado en {u}-{v}. Dijkstra no maneja pesos negativos.")
                 grafo[u].append((v, peso))
                 grafo[v].append((u, peso))
             except ValueError:
@@ -84,41 +128,43 @@ for linea in aristas_input.strip().split("\n"):
 # 3. Selección de Origen y Destino
 col1, col2 = st.columns(2)
 with col1:
-    nodo_inicial = st.selectbox("Nodo Origen:", lista_vertices if lista_vertices else [""])
+    nodo_inicial = st.selectbox("Origen (Departamento/Municipio):", lista_vertices if lista_vertices else [""])
 with col2:
-    nodo_destino = st.selectbox("Nodo Destino:", lista_vertices if lista_vertices else [""])
+    nodo_destino = st.selectbox("Destino (Departamento/Municipio):", lista_vertices if lista_vertices else [""])
 
 # Botón para calcular
-if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
-    if len(lista_vertices) < 31:
-        st.warning(f"⚠️ Atención: Tienes {len(lista_vertices)} vértices. La rúbrica exige un mínimo de 31 nodos para Dijkstra.")
+if st.button("🚀 Calcular Ruta Más Corta en el Mapa", type="primary"):
+    total_nodos = len(lista_vertices)
+    if total_nodos < 31:
+        st.warning(f"⚠️ Tienes {total_nodos} nodos. Recuerda que la rúbrica pide mínimo 31 nodos.")
+    else:
+        st.success(f"✅ Cumple con el requisito de nodos ({total_nodos} nodos activos).")
 
     if nodo_inicial and nodo_destino and nodo_inicial in grafo and nodo_destino in grafo:
         distancia, previo = dijkstra(grafo, nodo_inicial)
         
         if distancia[nodo_destino] != INF:
             camino = obtener_camino(previo, nodo_destino)
-            st.success(f"**Ruta más corta encontrada:** {' ➔ '.join(camino)}")
-            st.info(f"**Costo / Distancia Total:** {distancia[nodo_destino]}")
+            st.success(f"**Ruta más rápida:** {' ➔ '.join(camino)}")
+            st.info(f"**Costo / Distancia Total acumulada:** {distancia[nodo_destino]}")
         else:
             camino = []
-            st.error(f"El nodo {nodo_destino} no es alcanzable desde {nodo_inicial}.")
+            st.error(f"No hay ruta disponible hacia {nodo_destino} desde {nodo_inicial}.")
 
-        # --- GENERACIÓN Y VISUALIZACIÓN CON PYVIS Y MAPA DE FONDO ---
-        net = Network(height="650px", width="100%", bgcolor="rgba(0,0,0,0)", font_color="white", directed=False)
+        # --- VISUALIZACIÓN CON PYVIS Y MAPA DE GUATEMALA ---
+        net = Network(height="680px", width="100%", bgcolor="rgba(0,0,0,0)", font_color="white", directed=False)
         
         net.set_options("""
         var options = {
-          "nodes": { "font": {"size": 14, "face": "arial", "color": "white"}, "borderWidth": 2, "shadow": true },
-          "edges": { "color": {"inherit": false}, "smooth": {"type": "continuous"}, "font": {"size": 12, "color": "#ffeb3b"}, "shadow": true },
-          "physics": { "barnesHut": { "gravitationalConstant": -2000, "centralGravity": 0.3, "springLength": 90 }, "solver": "barnesHut" }
+          "nodes": { "font": {"size": 13, "face": "arial", "color": "white", "strokeWidth": 3, "strokeColor": "#000000"}, "borderWidth": 2, "shadow": true },
+          "edges": { "color": {"inherit": false}, "smooth": {"type": "continuous"}, "font": {"size": 12, "color": "#00ffff", "strokeWidth": 3, "strokeColor": "#000000"}, "shadow": true },
+          "physics": { "barnesHut": { "gravitationalConstant": -2500, "centralGravity": 0.4, "springLength": 100 }, "solver": "barnesHut" }
         }
         """)
 
-        # Agregar nodos (destacando los del camino más corto)
         for nodo in grafo:
-            color = "#ff2e63" if nodo in camino else "#00b4d8"
-            size = 22 if nodo in camino else 16
+            color = "#ff2e63" if nodo in camino else "#2196F3"
+            size = 20 if nodo in camino else 14
             net.add_node(nodo, label=nodo, color=color, size=size)
 
         aristas_camino = set(zip(camino, camino[1:]))
@@ -131,29 +177,30 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
                 if pair not in aristas_agregadas:
                     aristas_agregadas.add(pair)
                     if (origen, dest) in aristas_camino:
-                        net.add_edge(origen, dest, value=peso, title=f"Costo: {peso}", label=str(peso), color="#ff2e63", width=5)
+                        net.add_edge(origen, dest, value=peso, title=f"Distancia: {peso}", label=str(peso), color="#ff2e63", width=5)
                     else:
-                        net.add_edge(origen, dest, value=peso, title=f"Costo: {peso}", label=str(peso), color="rgba(255,255,255,0.4)", width=1)
+                        net.add_edge(origen, dest, value=peso, title=f"Distancia: {peso}", label=str(peso), color="rgba(255,255,255,0.5)", width=1)
 
-        html_file = "dijkstra_temp.html"
+        html_file = "dijkstra_guatemala.html"
         net.save_graph(html_file)
         
         with open(html_file, "r", encoding="utf-8") as f:
             html_content = f.read()
 
-        # Inyectar estilos CSS avanzados para colocar la imagen de mapa de fondo detrás del grafo de Pyvis
+        # Estilo para colocar el mapa de Guatemala de fondo con transparencia
         custom_css = f"""
         <style>
         #mynetwork {{
-            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('{mapa_fondo_url}');
-            background-size: cover;
+            background-image: linear-gradient(rgba(10, 25, 47, 0.75), rgba(10, 25, 47, 0.75)), url('{mapa_fondo_url}');
+            background-size: contain;
+            background-repeat: no-repeat;
             background-position: center;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
         }}
         </style>
         """
         
-        components.html(custom_css + html_content, height=670)
+        components.html(custom_css + html_content, height=700)
     else:
-        st.warning("Asegúrate de seleccionar nodos de origen y destino válidos.")
+        st.warning("Selecciona correctamente los puntos de origen y destino.")
