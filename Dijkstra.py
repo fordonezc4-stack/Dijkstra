@@ -39,19 +39,31 @@ def obtener_camino(previo, destino):
     return camino
 
 # --- INTERFAZ STREAMLIT ---
-st.set_page_config(page_title="Algoritmo de Dijkstra", layout="wide")
-st.title("🌐 Visualizador del Algoritmo de Dijkstra")
+st.set_page_config(page_title="Algoritmo de Dijkstra con Mapa", layout="wide")
+st.title("🌐 Visualizador de Rutas Mínimas - Dijkstra (con Mapa de Fondo)")
 
-st.sidebar.header("Configuración del Grafo")
+st.sidebar.header("Configuración del Grafo (Mínimo 31 Nodos)")
+
+# Generar por defecto una lista amplia para cumplir con los 31 nodos exigidos
+default_vertices = ", ".join([f"N{i}" for i in range(1, 35)])
+default_edges = "\n".join([f"N{i} N{i+1} {(i*3)%15 + 2}" for i in range(1, 34)])
+default_edges += "\nN34 N1 10\nN1 N15 7\nN5 N20 12"
 
 # 1. Entrada de Vértices
-vertices_input = st.sidebar.text_input("Vértices (separados por coma):", "A, B, C, D, E")
+vertices_input = st.sidebar.text_input("Vértices (separados por coma):", default_vertices)
 lista_vertices = [v.strip() for v in vertices_input.split(",") if v.strip()]
 
 # 2. Entrada de Aristas
-st.sidebar.subheader("Aristas")
-st.sidebar.caption("Formato por línea: origen destino peso (ej: A B 5)")
-aristas_input = st.sidebar.text_area("Lista de Aristas:", "A B 4\nA C 2\nB C 1\nB D 5\nC D 8\nC E 10\nD E 2")
+st.sidebar.subheader("Aristas y Pesos")
+st.sidebar.caption("Formato por línea: origen destino peso (ej: N1 N2 5)")
+aristas_input = st.sidebar.text_area("Lista de Aristas:", default_edges, height=150)
+
+# Opción para mapa de fondo (URL de una imagen de mapa o plano)
+st.sidebar.subheader("Personalización del Mapa")
+mapa_fondo_url = st.sidebar.text_input(
+    "URL de imagen de mapa de fondo:", 
+    "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1000&auto=format&fit=crop"
+)
 
 # Construcción del Grafo
 grafo = {v: [] for v in lista_vertices}
@@ -62,6 +74,8 @@ for linea in aristas_input.strip().split("\n"):
         if u in grafo and v in grafo:
             try:
                 peso = int(w)
+                if peso < 0:
+                    st.sidebar.warning(f"Advertencia: Peso negativo detectado en {u}-{v}. Dijkstra no maneja pesos negativos.")
                 grafo[u].append((v, peso))
                 grafo[v].append((u, peso))
             except ValueError:
@@ -75,40 +89,41 @@ with col2:
     nodo_destino = st.selectbox("Nodo Destino:", lista_vertices if lista_vertices else [""])
 
 # Botón para calcular
-if st.button("🚀 Calcular Camino Más Corto", type="primary"):
+if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
+    if len(lista_vertices) < 31:
+        st.warning(f"⚠️ Atención: Tienes {len(lista_vertices)} vértices. La rúbrica exige un mínimo de 31 nodos para Dijkstra.")
+
     if nodo_inicial and nodo_destino and nodo_inicial in grafo and nodo_destino in grafo:
         distancia, previo = dijkstra(grafo, nodo_inicial)
         
         if distancia[nodo_destino] != INF:
             camino = obtener_camino(previo, nodo_destino)
-            st.success(f"**Camino más corto:** {' ➔ '.join(camino)}")
-            st.info(f"**Distancia total:** {distancia[nodo_destino]}")
+            st.success(f"**Ruta más corta encontrada:** {' ➔ '.join(camino)}")
+            st.info(f"**Costo / Distancia Total:** {distancia[nodo_destino]}")
         else:
             camino = []
-            st.error(f"No existe un camino entre {nodo_inicial} y {nodo_destino}.")
+            st.error(f"El nodo {nodo_destino} no es alcanzable desde {nodo_inicial}.")
 
-        # --- GENERACIÓN Y VISUALIZACIÓN CON PYVIS ---
-        net = Network(height="600px", width="100%", bgcolor="#1a1a2e", font_color="white", directed=False)
+        # --- GENERACIÓN Y VISUALIZACIÓN CON PYVIS Y MAPA DE FONDO ---
+        net = Network(height="650px", width="100%", bgcolor="rgba(0,0,0,0)", font_color="white", directed=False)
         
-        # Opciones de animación/física
         net.set_options("""
         var options = {
-          "nodes": { "font": {"size": 20, "face": "arial", "color": "white"}, "borderWidth": 3, "shadow": true },
-          "edges": { "color": {"inherit": false}, "smooth": {"type": "continuous"}, "font": {"size": 16, "color": "#eeeeee"}, "shadow": true },
-          "physics": { "forceAtlas2Based": { "gravitationalConstant": -90, "centralGravity": 0.01, "springLength": 160, "springConstant": 0.08 }, "solver": "forceAtlas2Based" }
+          "nodes": { "font": {"size": 14, "face": "arial", "color": "white"}, "borderWidth": 2, "shadow": true },
+          "edges": { "color": {"inherit": false}, "smooth": {"type": "continuous"}, "font": {"size": 12, "color": "#ffeb3b"}, "shadow": true },
+          "physics": { "barnesHut": { "gravitationalConstant": -2000, "centralGravity": 0.3, "springLength": 90 }, "solver": "barnesHut" }
         }
         """)
 
-        # Agregar nodos
+        # Agregar nodos (destacando los del camino más corto)
         for nodo in grafo:
-            color = "#ff2e63" if nodo in camino else "#4cc9f0"
-            net.add_node(nodo, label=nodo, color=color, size=28)
+            color = "#ff2e63" if nodo in camino else "#00b4d8"
+            size = 22 if nodo in camino else 16
+            net.add_node(nodo, label=nodo, color=color, size=size)
 
-        # Aristas en el camino crítico
         aristas_camino = set(zip(camino, camino[1:]))
         aristas_camino |= set((b, a) for a, b in aristas_camino)
 
-        # Agregar aristas
         aristas_agregadas = set()
         for origen in grafo:
             for dest, peso in grafo[origen]:
@@ -116,17 +131,29 @@ if st.button("🚀 Calcular Camino Más Corto", type="primary"):
                 if pair not in aristas_agregadas:
                     aristas_agregadas.add(pair)
                     if (origen, dest) in aristas_camino:
-                        net.add_edge(origen, dest, value=peso, title=f"Peso: {peso}", label=str(peso), color="#ff2e63", width=6)
+                        net.add_edge(origen, dest, value=peso, title=f"Costo: {peso}", label=str(peso), color="#ff2e63", width=5)
                     else:
-                        net.add_edge(origen, dest, value=peso, title=f"Peso: {peso}", label=str(peso), color="#777777", width=2)
+                        net.add_edge(origen, dest, value=peso, title=f"Costo: {peso}", label=str(peso), color="rgba(255,255,255,0.4)", width=1)
 
-        # Guardar en HTML temporal para renderizarlo en Streamlit
-        html_file = "grafo_temp.html"
+        html_file = "dijkstra_temp.html"
         net.save_graph(html_file)
         
         with open(html_file, "r", encoding="utf-8") as f:
             html_content = f.read()
 
-        components.html(html_content, height=620)
+        # Inyectar estilos CSS avanzados para colocar la imagen de mapa de fondo detrás del grafo de Pyvis
+        custom_css = f"""
+        <style>
+        #mynetwork {{
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('{mapa_fondo_url}');
+            background-size: cover;
+            background-position: center;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }}
+        </style>
+        """
+        
+        components.html(custom_css + html_content, height=670)
     else:
-        st.warning("Asegúrate de ingresar vértices válidos.")
+        st.warning("Asegúrate de seleccionar nodos de origen y destino válidos.")
