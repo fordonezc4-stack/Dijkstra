@@ -44,7 +44,7 @@ st.title("🇬🇹 Red Vial de Guatemala - Algoritmo de Dijkstra")
 
 st.sidebar.header("Configuración del Mapa Vial")
 
-# Coordenadas geográficas distribuidas para formar el mapa de Guatemala
+# Coordenadas geográficas distribuidas para formar el mapa de Guatemala de manera ordenada
 POSICIONES_GEOGRAFICAS = {
     "Peten": (0, -320),
     "Flores": (60, -350),
@@ -171,7 +171,7 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
             st.error(f"No hay conexión entre {nodo_inicial} y {nodo_destino}.")
 
         # --- CREACIÓN DE LA RED PYVIS ---
-        net = Network(height="680px", width="100%", bgcolor="rgba(0,0,0,0)", font_color="white", directed=False)
+        net = Network(height="650px", width="100%", bgcolor="rgba(0,0,0,0)", font_color="black", directed=False)
         
         net.set_options("""
         var options = {
@@ -215,29 +215,28 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
                     else:
                         net.add_edge(origen, dest, value=peso, title=f"Distancia: {peso}", label=str(peso), color="rgba(120,120,120,0.5)", width=1.5)
 
-        html_file = "dijkstra_mapa.html"
+        html_file = "dijkstra_mapa_final.html"
         net.save_graph(html_file)
         
         with open(html_file, "r", encoding="utf-8") as f:
-            html_content = f.read()
+            pyvis_html = f.read()
 
-        # Inyectar el mapa de Guatemala y hacer transparentes los lienzos de Pyvis
+        # Contenedor maestro con capas precisas (Imagen abajo, Grafo interactivo transparente arriba)
         mapa_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Guatemala_departments_blank.svg/800px-Guatemala_departments_blank.svg.png"
         
-        capa_mapa_html = f"""
-        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 0; pointer-events: none;">
-            <img src="{mapa_url}" style="height: 85%; opacity: 0.35;">
+        contenedor_maestro = f"""
+        <div style="position: relative; width: 100%; height: 680px; background-color: #ffffff; border-radius: 12px; border: 2px solid #e0e0e0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <!-- Capa 1: Imagen del mapa de Guatemala de fondo -->
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 1;">
+                <img src="{mapa_url}" style="max-height: 85%; opacity: 0.35; pointer-events: none;">
+            </div>
+            <!-- Capa 2: Grafo interactivo dentro de un iframe transparente -->
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;">
+                <iframe srcdoc="{pyvis_html.replace('"', '&quot;')}" style="width: 100%; height: 100%; border: none; background: transparent;"></iframe>
+            </div>
         </div>
-        <style>
-            body, html {{ background: transparent !important; }}
-            #mynetwork {{ background: transparent !important; }}
-            canvas {{ background: transparent !important; }}
-        </style>
         """
         
-        # Insertar el mapa y los estilos justo después de la etiqueta <body>
-        html_content = html_content.replace("<body>", "<body>" + capa_mapa_html)
-
-        components.html(html_content, height=700)
+        components.html(contenedor_maestro, height=700)
     else:
         st.warning("Selecciona nodos de origen y destino válidos.")
