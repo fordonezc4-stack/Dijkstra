@@ -1,7 +1,15 @@
+
 import streamlit as st
 import streamlit.components.v1 as components
 from pyvis.network import Network
 import heapq
+import base64
+
+def obtener_imagen_base64(ruta_imagen):
+    with open(ruta_imagen, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode("utf-8")
+    
 
 INF = float("inf")
 
@@ -221,9 +229,10 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
         with open(html_file, "r", encoding="utf-8") as f:
             pyvis_html = f.read()
 
-        # Contenedor maestro con capas precisas (Imagen abajo, Grafo interactivo transparente arriba)
-        mapa_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Guatemala_departments_blank.svg/800px-Guatemala_departments_blank.svg.png"
-        
+        # Convierte la imagen local a Base64 para que Streamlit la lea sin problemas
+        img_base64 = obtener_imagen_base64("mapa.png") 
+        mapa_url = f"data:image/png;base64,{img_base64}"
+
         contenedor_maestro = f"""
         <div style="position: relative; width: 100%; height: 680px; background-color: #ffffff; border-radius: 12px; border: 2px solid #e0e0e0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
             <!-- Capa 1: Imagen del mapa de Guatemala de fondo -->
@@ -240,3 +249,4 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
         components.html(contenedor_maestro, height=700)
     else:
         st.warning("Selecciona nodos de origen y destino válidos.")
+        
