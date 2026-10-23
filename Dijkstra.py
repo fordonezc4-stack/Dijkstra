@@ -232,7 +232,11 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
         # Convierte la imagen local a Base64 para que Streamlit la lea sin problemas
         img_base64 = obtener_imagen_base64("mapa.png") 
         mapa_url = f"data:image/png;base64,{img_base64}"
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 105ebfc967b593d297b0487708d9f7705254cfc3
         contenedor_maestro = f"""
         <div style="position: relative; width: 100%; height: 680px; background-color: #ffffff; border-radius: 12px; border: 2px solid #e0e0e0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
             <!-- Capa 1: Imagen del mapa de Guatemala de fondo -->
