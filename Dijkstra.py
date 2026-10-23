@@ -171,7 +171,7 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
             st.error(f"No hay conexión entre {nodo_inicial} y {nodo_destino}.")
 
         # --- CREACIÓN DE LA RED PYVIS ---
-        net = Network(height="680px", width="100%", bgcolor="#ffffff", font_color="white", directed=False)
+        net = Network(height="680px", width="100%", bgcolor="rgba(0,0,0,0)", font_color="white", directed=False)
         
         net.set_options("""
         var options = {
@@ -221,26 +221,22 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
         with open(html_file, "r", encoding="utf-8") as f:
             html_content = f.read()
 
-        # Inyectar el mapa de Guatemala directamente dentro del HTML de Pyvis para garantizar su visualización
+        # Inyectar el mapa de Guatemala y hacer transparentes los lienzos de Pyvis
         mapa_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Guatemala_departments_blank.svg/800px-Guatemala_departments_blank.svg.png"
         
-        css_inyeccion = f"""
+        capa_mapa_html = f"""
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 0; pointer-events: none;">
+            <img src="{mapa_url}" style="height: 85%; opacity: 0.35;">
+        </div>
         <style>
-        body {{
-            background-image: url('{mapa_url}') !important;
-            background-size: contain !important;
-            background-repeat: no-repeat !important;
-            background-position: center !important;
-            background-color: #ffffff !important;
-        }}
-        #mynetwork {{
-            background: transparent !important;
-        }}
+            body, html {{ background: transparent !important; }}
+            #mynetwork {{ background: transparent !important; }}
+            canvas {{ background: transparent !important; }}
         </style>
         """
         
-        # Insertar el estilo justo antes de cerrar la etiqueta </head>
-        html_content = html_content.replace("</head>", css_inyeccion + "</head>")
+        # Insertar el mapa y los estilos justo después de la etiqueta <body>
+        html_content = html_content.replace("<body>", "<body>" + capa_mapa_html)
 
         components.html(html_content, height=700)
     else:
