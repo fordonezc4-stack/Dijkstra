@@ -42,48 +42,45 @@ def obtener_camino(previo, destino):
 st.set_page_config(page_title="Rutas de Guatemala - Dijkstra", layout="wide")
 st.title("🇬🇹 Red Vial de Guatemala - Algoritmo de Dijkstra")
 
-st.sidebar.header("Configuración del Grafo")
+st.sidebar.header("Configuración del Mapa Vial")
 
-# Diccionario con Posiciones X, Y aproximadas en el mapa geográfico de Guatemala
-# (Coordenadas fijadas para que se mantengan ordenadas sobre la imagen de fondo)
+# Coordenadas geográficas distribuidas ampliamente para que no se amontonen
 POSICIONES_GEOGRAFICAS = {
-    "Peten": (0, -280),
-    "Flores": (20, -320),
-    "Sayaxche": (-30, -220),
-    "Alta_Verapaz": (10, -100),
-    "Coban": (-20, -110),
-    "Baja_Verapaz": (-10, -40),
-    "Izabal": (180, -100),
-    "Puerto_Barrios": (220, -110),
-    "Zacapa": (130, -30),
-    "Chiquimula": (140, 20),
-    "El_Progreso": (60, -30),
-    "Jalapa": (80, 40),
-    "Jutiapa": (110, 110),
-    "Santa_Rosa": (40, 120),
-    "Escuintla": (-30, 120),
-    "Puerto_Quetzal": (-30, 160),
-    "Guatemala": (20, 30),
-    "Mixco": (0, 30),
-    "Villa_Nueva": (15, 50),
-    "Sacatepequez": (-15, 40),
-    "Chimaltenango": (-40, 20),
-    "Solola": (-90, 20),
-    "Quiche": (-60, -60),
-    "Huehuetenango": (-140, -80),
-    "San_Marcos": (-180, -20),
-    "Quetzaltenango": (-130, 10),
-    "Totonicapan": (-110, -10),
-    "Retalhuleu": (-150, 60),
-    "Suchitepequez": (-100, 70),
-    "Coatepeque": (-170, 40),
-    "Mazatenango": (-90, 80)
+    "Peten": (0, -320),
+    "Flores": (60, -350),
+    "Sayaxche": (-60, -240),
+    "Alta_Verapaz": (20, -130),
+    "Coban": (-40, -140),
+    "Baja_Verapaz": (-20, -50),
+    "Izabal": (250, -140),
+    "Puerto_Barrios": (310, -150),
+    "Zacapa": (170, -40),
+    "Chiquimula": (190, 30),
+    "El_Progreso": (90, -40),
+    "Jalapa": (110, 60),
+    "Jutiapa": (160, 160),
+    "Santa_Rosa": (60, 170),
+    "Escuintla": (-30, 170),
+    "Puerto_Quetzal": (-30, 230),
+    "Guatemala": (30, 40),
+    "Mixco": (-10, 30),
+    "Villa_Nueva": (20, 80),
+    "Sacatepequez": (-30, 50),
+    "Chimaltenango": (-80, 30),
+    "Solola": (-150, 40),
+    "Quiche": (-90, -80),
+    "Huehuetenango": (-220, -100),
+    "San_Marcos": (-280, 10),
+    "Quetzaltenango": (-200, 30),
+    "Totonicapan": (-160, -10),
+    "Retalhuleu": (-230, 100),
+    "Suchitepequez": (-140, 110),
+    "Coatepeque": (-260, 60),
+    "Mazatenango": (-120, 130)
 }
 
-# Entrada predeterminada de los 31 Nodos
 default_vertices = ", ".join(POSICIONES_GEOGRAFICAS.keys())
 
-# Aristas ordenadas con distancias reales/aproximadas
 default_edges = """
 Peten Flores 1
 Peten Sayaxche 2
@@ -129,18 +126,11 @@ Suchitepequez Mazatenango 1
 Suchitepequez Escuintla 4
 """
 
-# Entradas en la barra lateral
 vertices_input = st.sidebar.text_input("Departamentos y Nodos:", default_vertices)
 lista_vertices = [v.strip() for v in vertices_input.split(",") if v.strip()]
 
 st.sidebar.subheader("Conexiones y Pesos")
 aristas_input = st.sidebar.text_area("Lista de Aristas:", default_edges, height=180)
-
-# Imagen del mapa vectorial blanco/transparente de Guatemala
-mapa_fondo_url = st.sidebar.text_input(
-    "URL del Mapa de Fondo:",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Guatemala_departments_blank.svg/800px-Guatemala_departments_blank.svg.png"
-)
 
 # Construcción del Grafo
 grafo = {v: [] for v in lista_vertices}
@@ -156,7 +146,6 @@ for linea in aristas_input.strip().split("\n"):
             except ValueError:
                 pass
 
-# Selección de Origen y Destino
 col1, col2 = st.columns(2)
 with col1:
     nodo_inicial = st.selectbox("Origen:", lista_vertices if lista_vertices else [""])
@@ -168,7 +157,7 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
     if total_nodos < 31:
         st.warning(f"⚠️ El grafo tiene {total_nodos} nodos. La rúbrica requiere mínimo 31 nodos.")
     else:
-        st.success(f"✅ Requisito cumplido: {total_nodos} nodos ordenados en el mapa de Guatemala.")
+        st.success(f"✅ Requisito cumplido: {total_nodos} nodos distribuidos en el mapa.")
 
     if nodo_inicial and nodo_destino and nodo_inicial in grafo and nodo_destino in grafo:
         distancia, previo = dijkstra(grafo, nodo_inicial)
@@ -181,37 +170,38 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
             camino = []
             st.error(f"No hay conexión entre {nodo_inicial} y {nodo_destino}.")
 
-        # --- VISUALIZACIÓN ORDENADA EN PYVIS ---
-        net = Network(height="700px", width="100%", bgcolor="rgba(0,0,0,0)", font_color="white", directed=False)
+        # --- CREACIÓN DE LA RED PYVIS ---
+        net = Network(height="650px", width="100%", bgcolor="rgba(0,0,0,0)", font_color="white", directed=False)
         
-        # Desactivar física libre para mantener las posiciones fijas y limpias
         net.set_options("""
         var options = {
           "physics": { "enabled": false },
           "nodes": {
-             "font": { "size": 15, "face": "arial", "color": "#ffffff", "strokeWidth": 4, "strokeColor": "#000000" },
+             "font": { "size": 12, "face": "arial", "color": "#ffffff", "strokeWidth": 3, "strokeColor": "#000000" },
              "borderWidth": 2,
              "shadow": true
           },
           "edges": {
              "smooth": { "type": "continuous" },
-             "font": { "size": 13, "color": "#00ffff", "strokeWidth": 4, "strokeColor": "#000000" },
+             "font": { "size": 11, "color": "#00ffff", "strokeWidth": 3, "strokeColor": "#000000" },
              "shadow": true
           }
         }
         """)
 
-        # Agregar nodos con coordenadas fijas (X, Y)
+        # Añadir nodos ordenados geográficamente
         for nodo in grafo:
             color = "#ff2e63" if nodo in camino else "#00adb5"
-            size = 22 if nodo in camino else 14
+            size = 18 if nodo in camino else 12
             
-            # Si el nodo tiene coordenada asignada, se fija su posición
+            # Tooltip al pasar el mouse para ver el nombre limpio
+            tooltip = f"Departamento / Nodo: {nodo}"
+            
             if nodo in POSICIONES_GEOGRAFICAS:
                 x, y = POSICIONES_GEOGRAFICAS[nodo]
-                net.add_node(nodo, label=nodo, color=color, size=size, x=x, y=y, physics=False)
+                net.add_node(nodo, label=nodo, title=tooltip, color=color, size=size, x=x, y=y, physics=False)
             else:
-                net.add_node(nodo, label=nodo, color=color, size=size)
+                net.add_node(nodo, label=nodo, title=tooltip, color=color, size=size)
 
         aristas_camino = set(zip(camino, camino[1:]))
         aristas_camino |= set((b, a) for a, b in aristas_camino)
@@ -223,31 +213,30 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
                 if pair not in aristas_agregadas:
                     aristas_agregadas.add(pair)
                     if (origen, dest) in aristas_camino:
-                        net.add_edge(origen, dest, value=peso, title=f"Distancia: {peso}", label=str(peso), color="#ff2e63", width=6)
+                        net.add_edge(origen, dest, value=peso, title=f"Distancia: {peso}", label=str(peso), color="#ff2e63", width=5)
                     else:
-                        net.add_edge(origen, dest, value=peso, title=f"Distancia: {peso}", label=str(peso), color="rgba(0, 0, 0, 0.4)", width=1.5)
+                        net.add_edge(origen, dest, value=peso, title=f"Distancia: {peso}", label=str(peso), color="rgba(100,100,100,0.4)", width=1)
 
-        html_file = "dijkstra_guatemala_ordenado.html"
+        html_file = "dijkstra_mapa_real.html"
         net.save_graph(html_file)
         
         with open(html_file, "r", encoding="utf-8") as f:
             html_content = f.read()
 
-        # Fondo con mapa estilizado
-        custom_css = f"""
-        <style>
-        #mynetwork {{
-            background-image: linear-gradient(rgba(240, 244, 248, 0.85), rgba(240, 244, 248, 0.85)), url('{mapa_fondo_url}');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            border-radius: 12px;
-            border: 2px solid #ccc;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }}
-        </style>
+        # HTML personalizado con la imagen de fondo incrustada directamente (evita bloqueos de navegador)
+        contenedor_con_mapa = f"""
+        <div style="position: relative; width: 100%; height: 670px; background-color: #f8f9fa; border-radius: 12px; border: 2px solid #ddd; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <!-- Imagen del mapa de fondo garantizada -->
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Guatemala_departments_blank.svg/800px-Guatemala_departments_blank.svg.png" 
+                 style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); height: 90%; opacity: 0.35; pointer-events: none; z-index: 0;">
+            
+            <!-- Contenedor de la red Pyvis encima del mapa -->
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+                {html_content}
+            </div>
+        </div>
         """
         
-        components.html(custom_css + html_content, height=720)
+        components.html(contenedor_con_mapa, height=690)
     else:
         st.warning("Selecciona nodos de origen y destino válidos.")
