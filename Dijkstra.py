@@ -222,7 +222,7 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
             pyvis_html = f.read()
 
         # Contenedor maestro con capas precisas (Imagen abajo, Grafo interactivo transparente arriba)
-        mapa_url = mapa.png
+        mapa_url = "mapa.png"
         
         contenedor_maestro = f"""
         <div style="position: relative; width: 100%; height: 680px; background-color: #ffffff; border-radius: 12px; border: 2px solid #e0e0e0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
