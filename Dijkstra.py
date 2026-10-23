@@ -177,7 +177,7 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
             st.error(f"No hay conexión entre {nodo_inicial} y {nodo_destino}.")
 
         # --- CREACIÓN DE LA RED PYVIS ---
-        net = Network(height="100%", width="100%", bgcolor="rgba(0,0,0,0)", font_color="black", directed=False)
+        net = Network(height="680px", width="100%", bgcolor="rgba(0,0,0,0)", font_color="black", directed=False)
         
         net.set_options("""
         var options = {
@@ -227,27 +227,26 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
         with open(html_file, "r", encoding="utf-8") as f:
             pyvis_html = f.read()
 
-        # Forzar fondo transparente y bloqueo de scroll en el HTML interno de Pyvis
-        pyvis_html = pyvis_html.replace("</head>", "<style>body { background: transparent !important; margin: 0; overflow: hidden; }</style></head>")
-
-        # Convierte la imagen local a Base64
+        # Convertir imagen a Base64 eインyectarla directamente como fondo CSS del grafo
         img_base64 = obtener_imagen_base64("mapa.png") 
         mapa_url = f"data:image/png;base64,{img_base64}"
-        
-        # Contenedor maestro limpio con capas perfectamente acopladas y sin desbordamiento
-        contenedor_maestro = f"""
-        <div style="position: relative; width: 100%; height: 650px; background: transparent; overflow: hidden;">
-            <!-- Capa 1: Imagen del mapa de Guatemala de fondo con filtro para quitar blanco -->
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; display: flex; justify-content: center; align-items: center; overflow: hidden;">
-                <img src="{mapa_url}" style="width: 100%; height: 100%; object-fit: contain; opacity: 0.35; mix-blend-mode: multiply; pointer-events: none;">
-            </div>
-            <!-- Capa 2: Grafo interactivo dentro de un iframe transparente y sin scroll -->
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; overflow: hidden;">
-                <iframe srcdoc="{pyvis_html.replace('"', '&quot;')}" style="width: 100%; height: 100%; border: none; background: transparent;" scrolling="no"></iframe>
-            </div>
-        </div>
+
+        estilo_fondo = f"""
+        <style>
+            body {{
+                background-image: url('{mapa_url}');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+                background-color: transparent !important;
+                margin: 0;
+            }}
+        </style>
+        </head>
         """
-        
-        components.html(contenedor_maestro, height=670)
+        pyvis_html = pyvis_html.replace("</head>", estilo_fondo)
+
+        # Renderizar directamente el HTML unificado en Streamlit sin iframes externos
+        components.html(pyvis_html, height=700)
     else:
         st.warning("Selecciona nodos de origen y destino válidos.")
