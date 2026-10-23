@@ -44,7 +44,7 @@ st.title("🇬🇹 Red Vial de Guatemala - Algoritmo de Dijkstra")
 
 st.sidebar.header("Configuración del Mapa Vial")
 
-# Coordenadas geográficas distribuidas ampliamente para que no se amontonen
+# Coordenadas geográficas distribuidas para formar el mapa de Guatemala
 POSICIONES_GEOGRAFICAS = {
     "Peten": (0, -320),
     "Flores": (60, -350),
@@ -171,19 +171,19 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
             st.error(f"No hay conexión entre {nodo_inicial} y {nodo_destino}.")
 
         # --- CREACIÓN DE LA RED PYVIS ---
-        net = Network(height="650px", width="100%", bgcolor="rgba(0,0,0,0)", font_color="white", directed=False)
+        net = Network(height="680px", width="100%", bgcolor="#ffffff", font_color="white", directed=False)
         
         net.set_options("""
         var options = {
           "physics": { "enabled": false },
           "nodes": {
-             "font": { "size": 12, "face": "arial", "color": "#ffffff", "strokeWidth": 3, "strokeColor": "#000000" },
+             "font": { "size": 13, "face": "arial", "color": "#000000", "strokeWidth": 2, "strokeColor": "#ffffff" },
              "borderWidth": 2,
              "shadow": true
           },
           "edges": {
              "smooth": { "type": "continuous" },
-             "font": { "size": 11, "color": "#00ffff", "strokeWidth": 3, "strokeColor": "#000000" },
+             "font": { "size": 12, "color": "#004d40", "strokeWidth": 2, "strokeColor": "#ffffff" },
              "shadow": true
           }
         }
@@ -193,9 +193,7 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
         for nodo in grafo:
             color = "#ff2e63" if nodo in camino else "#00adb5"
             size = 18 if nodo in camino else 12
-            
-            # Tooltip al pasar el mouse para ver el nombre limpio
-            tooltip = f"Departamento / Nodo: {nodo}"
+            tooltip = f"Departamento: {nodo}"
             
             if nodo in POSICIONES_GEOGRAFICAS:
                 x, y = POSICIONES_GEOGRAFICAS[nodo]
@@ -215,28 +213,35 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
                     if (origen, dest) in aristas_camino:
                         net.add_edge(origen, dest, value=peso, title=f"Distancia: {peso}", label=str(peso), color="#ff2e63", width=5)
                     else:
-                        net.add_edge(origen, dest, value=peso, title=f"Distancia: {peso}", label=str(peso), color="rgba(100,100,100,0.4)", width=1)
+                        net.add_edge(origen, dest, value=peso, title=f"Distancia: {peso}", label=str(peso), color="rgba(120,120,120,0.5)", width=1.5)
 
-        html_file = "dijkstra_mapa_real.html"
+        html_file = "dijkstra_mapa.html"
         net.save_graph(html_file)
         
         with open(html_file, "r", encoding="utf-8") as f:
             html_content = f.read()
 
-        # HTML personalizado con la imagen de fondo incrustada directamente (evita bloqueos de navegador)
-        contenedor_con_mapa = f"""
-        <div style="position: relative; width: 100%; height: 670px; background-color: #f8f9fa; border-radius: 12px; border: 2px solid #ddd; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <!-- Imagen del mapa de fondo garantizada -->
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Guatemala_departments_blank.svg/800px-Guatemala_departments_blank.svg.png" 
-                 style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); height: 90%; opacity: 0.35; pointer-events: none; z-index: 0;">
-            
-            <!-- Contenedor de la red Pyvis encima del mapa -->
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
-                {html_content}
-            </div>
-        </div>
+        # Inyectar el mapa de Guatemala directamente dentro del HTML de Pyvis para garantizar su visualización
+        mapa_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Guatemala_departments_blank.svg/800px-Guatemala_departments_blank.svg.png"
+        
+        css_inyeccion = f"""
+        <style>
+        body {{
+            background-image: url('{mapa_url}') !important;
+            background-size: contain !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            background-color: #ffffff !important;
+        }}
+        #mynetwork {{
+            background: transparent !important;
+        }}
+        </style>
         """
         
-        components.html(contenedor_con_mapa, height=690)
+        # Insertar el estilo justo antes de cerrar la etiqueta </head>
+        html_content = html_content.replace("</head>", css_inyeccion + "</head>")
+
+        components.html(html_content, height=700)
     else:
         st.warning("Selecciona nodos de origen y destino válidos.")
