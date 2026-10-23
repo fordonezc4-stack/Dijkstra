@@ -227,7 +227,9 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
         with open(html_file, "r", encoding="utf-8") as f:
             pyvis_html = f.read()
 
-        # Forzar fondo transparente al HTML de Pyvis para eliminar el bloque blanco
+
+
+        # Forzar fondo transparente al HTML de Pyvis para eliminar el bloque blanco ajsbhaduabbd
         pyvis_html = pyvis_html.replace("</head>", "<style>body { background: transparent !important; }</style></head>")
 
         # Convierte la imagen local a Base64 para que Streamlit la lea sin problemas
@@ -235,12 +237,12 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
         mapa_url = f"data:image/png;base64,{img_base64}"
         
         contenedor_maestro = f"""
-        <div style="position: relative; width: 100%; height: 680px; background-color: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-            <!-- Capa 1: Imagen del mapa de Guatemala de fondo -->
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 1;">
-                <img src="{mapa_url}" style="max-height: 85%; opacity: 0.45; pointer-events: none;">
+        <div style="position: relative; width: 100%; height: 680px; background-color: #111827; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            <!-- Capa 1: Imagen del mapa de Guatemala de fondo ajustada -->
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; display: flex; justify-content: center; align-items: center;">
+                <img src="{mapa_url}" style="width: 100%; height: 100%; object-fit: contain; opacity: 0.45; pointer-events: none;">
             </div>
-            <!-- Capa 2: Grafo interactivo dentro de un iframe transparente -->
+            <!-- Capa 2: Grafo interactivo transparente -->
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;">
                 <iframe srcdoc="{pyvis_html.replace('"', '&quot;')}" style="width: 100%; height: 100%; border: none; background: transparent;"></iframe>
             </div>
@@ -248,5 +250,8 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
         """
         
         components.html(contenedor_maestro, height=700)
+        
+        components.html(contenedor_maestro, height=700)
     else:
         st.warning("Selecciona nodos de origen y destino válidos.")
+    
