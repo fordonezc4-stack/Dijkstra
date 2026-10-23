@@ -237,10 +237,10 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
         mapa_url = f"data:image/png;base64,{img_base64}"
         
         contenedor_maestro = f"""
-        <div style="position: relative; width: 100%; height: 680px; background-color: #111827; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-            <!-- Capa 1: Imagen del mapa de Guatemala de fondo ajustada -->
+        <div style="position: relative; width: 100%; height: 680px; background: transparent; overflow: hidden;">
+            <!-- Capa 1: Imagen del mapa con mezcla para eliminar su fondo blanco -->
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; display: flex; justify-content: center; align-items: center;">
-                <img src="{mapa_url}" style="width: 100%; height: 100%; object-fit: contain; opacity: 0.45; pointer-events: none;">
+                <img src="{mapa_url}" style="max-height: 90%; opacity: 0.35; mix-blend-mode: multiply; pointer-events: none;">
             </div>
             <!-- Capa 2: Grafo interactivo transparente -->
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;">
@@ -248,6 +248,8 @@ if st.button("🚀 Calcular Ruta Más Corta", type="primary"):
             </div>
         </div>
         """
+        
+        components.html(contenedor_maestro, height=700)
         
         components.html(contenedor_maestro, height=700)
         
