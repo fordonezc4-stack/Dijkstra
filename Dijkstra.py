@@ -143,7 +143,6 @@ if calcular:
 # Creación de la Red Interactiva con Pyvis y Coordenadas Reales
 # ---------------------------------------------------------
 net = Network(height="650px", width="100%", bgcolor="#1e1e1e", font_color="white")
-net.barnes_hut(gravity=0, central_gravity=0, spring_length=0, spring_constant=0, damping=1.0)
 
 for nodo, (x, y) in POSICIONES_GEOGRAFICAS.items():
     if nodo in camino_actual:
