@@ -86,7 +86,7 @@ st.markdown("---")
 st.sidebar.header("⚙️ Configuración de la Red")
 st.sidebar.info(f"Vértices configurados en el sistema: **{len(POSICIONES_GEOGRAFICAS)}**")
 
-# Definición de Conexiones Base (Aristas ponderadas en kilómetros o costo)
+# Definición de Conexiones Base (Aristas ponderadas)
 aristas_base = [
     ("Guatemala", "Mixco", 18), ("Guatemala", "Villa_Nueva", 22), ("Guatemala", "Petapa", 15),
     ("Guatemala", "San_Lucas", 28), ("Guatemala", "Sanarate", 52), ("San_Lucas", "Antigua_Guatemala", 25),
@@ -99,8 +99,8 @@ aristas_base = [
     ("Palin", "Amatitlan", 12), ("Amatitlan", "Villa_Canales", 18), ("Guatemala", "Cuilapa", 60),
     ("Cuilapa", "Jutiapa", 55), ("Guatemala", "Jalapa", 90), ("Jalapa", "Chiquimula", 65),
     ("Chiquimula", "Esquipulas", 45), ("Chiquimula", "Jocotan", 20), ("Chiquimula", "Zacapa", 25),
-    ("Zacapa", "Puerto_Barrios", 150), ("Puerto_Barrios", "Livingston", 25), ("Guatemala", "Salama", 95),
-    ("Salama", "Coban", 75), ("Coban", "San_Pedro_Carcha", 8), ("Coban", "Flores_Peten", 210),
+    ("Zacapa", "Puerto_Barrios", 150), ("Puerto_Barrios", "Livingston", 25), ("Guatemala", "Salamá", 95),
+    ("Salamá", "Coban", 75), ("Coban", "San_Pedro_Carcha", 8), ("Coban", "Flores_Peten", 210),
     ("Flores_Peten", "Melchor", 90), ("Flores_Peten", "Poptun", 100), ("Poptun", "Chiquimula", 180),
     ("Guastatoya", "Zacapa", 55), ("Guastatoya", "Sanarate", 15), ("Huehuetenango", "Quetzaltenango", 85),
     ("Quiche_Cruz", "Huehuetenango", 70), ("Quiche_Cruz", "Coban", 95)
@@ -122,26 +122,28 @@ destino = col2.selectbox("Destino", nodos_lista, index=nodos_lista.index("Flores
 calcular = st.sidebar.button("🚀 Calcular Ruta Óptima", type="primary")
 
 # ---------------------------------------------------------
-# Ejecución y Visualización
+# Ejecución y Control de Estado de la Ruta
 # ---------------------------------------------------------
+camino_actual = []
+costo_total = float('inf')
+
 if calcular:
     distancias, previo = dijkstra(grafo, origen)
-    camino_optimo = obtener_camino(previo, destino)
     costo_total = distancias[destino]
 
     if costo_total == float('inf'):
         st.error(f"❌ No existe una ruta alcanzable desde **{origen}** hasta **{destino}**.")
     else:
+        camino_actual = obtener_camino(previo, destino)
         st.success(f"✅ ¡Ruta más corta calculada con éxito desde **{origen}** hasta **{destino}**!")
         st.metric(label="🛣️ Distancia / Costo Total Acumulado", value=f"{costo_total} km")
-        st.write(f"**Secuencia exacta de la ruta:** `{' ➔ '.join(camino_optimo)}`")
+        st.write(f"**Secuencia exacta de la ruta:** `{' ➔ '.join(camino_actual)}`")
 
+# ---------------------------------------------------------
 # Creación de la Red Interactiva con Pyvis y Fondo del Mapa
+# ---------------------------------------------------------
 net = Network(height="650px", width="100%", bgcolor="#1e1e1e", font_color="white")
 net.barnes_hut(gravity=-3000, central_gravity=0.3, spring_length=95)
-
-# Determinar nodos que forman parte del camino óptimo si se calculó
-camino_actual = obtener_camino(previo, destino) if 'previo' in locals() and costo_total != float('inf') else []
 
 for nodo, (x, y) in POSICIONES_GEOGRAFICAS.items():
     if nodo in camino_actual:
@@ -154,13 +156,21 @@ for nodo, (x, y) in POSICIONES_GEOGRAFICAS.items():
         color = "#f39c12"  # Naranja para el destino
         size = 22
     else:
-        color = "#a6a6a6"  # Gris neutral para el resto de los 45 nodos
+        color = "#a6a6a6"  # Gris neutral para el resto de los nodos
         size = 14
 
     net.add_node(nodo, label=nodo.replace("_", " "), x=x*3, y=y*3, color=color, size=size, fixed=False)
 
 for u, v, peso in aristas_base:
-    if any((u in camino_actual and v in camino_actual and abs(camino_actual.index(u) - camino_actual.index(v)) == 1)):
+    # Verificación segura para colorear las aristas del camino óptimo
+    es_camino = False
+    if len(camino_actual) > 1:
+        for i in range(len(camino_actual) - 1):
+            if (u == camino_actual[i] and v == camino_actual[i+1]) or (v == camino_actual[i] and u == camino_actual[i+1]):
+                es_camino = True
+                break
+
+    if es_camino:
         net.add_edge(u, v, color="#ff2e63", width=5, title=f"Peso: {peso} km (Ruta Óptima)")
     else:
         net.add_edge(u, v, color="#444444", width=1, title=f"Peso: {peso} km")
